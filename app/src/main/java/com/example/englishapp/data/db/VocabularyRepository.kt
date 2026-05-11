@@ -49,26 +49,14 @@ class VocabularyRepository(context: Context) {
     }
 
     private fun rebuildKaoYanWordbook(db: android.database.sqlite.SQLiteDatabase, now: Long) {
-        db.beginTransaction()
-        try {
-            // 无论是否已存在，先删旧数据（保证老用户也能更新为新词库）
-            val exists = db.rawQuery("SELECT COUNT(1) FROM wordbooks WHERE id=2", null).use { c ->
+        // 如果考研词书已存在，不再重建（保留用户学习记录）
+        if (db.rawQuery("SELECT COUNT(1) FROM wordbooks WHERE id=2", null).use { c ->
                 c.moveToFirst(); c.getInt(0) > 0
             }
-            if (exists) {
-                db.execSQL(
-                    "DELETE FROM learning_records WHERE word_id IN (SELECT id FROM words WHERE wordbook_id=2)"
-                )
-                db.execSQL(
-                    "DELETE FROM review_history WHERE word_id IN (SELECT id FROM words WHERE wordbook_id=2)"
-                )
-                db.execSQL("DELETE FROM words WHERE wordbook_id=2")
-                db.execSQL("DELETE FROM user_wordbooks WHERE wordbook_id=2")
-                db.execSQL("DELETE FROM wordbooks WHERE id=2")
-                // 当考研词书重建时，将其他词书也取消选中
-                db.execSQL("UPDATE user_wordbooks SET selected=0")
-            }
+        ) return
 
+        db.beginTransaction()
+        try {
             val kaoyanBookId = 2L
             db.execSQL(
                 "INSERT INTO wordbooks(id,name,description,word_count,source,created_at) VALUES(?,?,?,?,?,?)",
