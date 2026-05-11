@@ -449,11 +449,20 @@ class VocabularyRepository(context: Context) {
         val update = SpacedRepetition.applyRating(now, previous, rating)
 
         // 新单词首次答对（Hard/Know）直接跳到强度40，加速熟练掌握
-        val finalStrength = if (previous == null && (rating == Rating.Hard || rating == Rating.Know)) {
-            40
+        val isFirstCorrectBonus = previous == null && (rating == Rating.Hard || rating == Rating.Know)
+        val finalStrength = if (isFirstCorrectBonus) 40 else update.memoryStrength
+        // 同步调整 repetitions 和 interval 以匹配强度40（=4次正确复习）
+        val finalRepetitions = if (isFirstCorrectBonus) {
+            SpacedRepetition.strengthToRepetitions(40)
         } else {
-            update.memoryStrength
+            update.repetitions
         }
+        val finalInterval = if (isFirstCorrectBonus) {
+            SpacedRepetition.intervalsSeconds[(finalRepetitions - 1).coerceIn(0, SpacedRepetition.intervalsSeconds.lastIndex)]
+        } else {
+            update.intervalSeconds
+        }
+        val finalNextReviewTime = if (isFirstCorrectBonus) now + finalInterval * 1000L else update.nextReviewTime
 
         val today = todayKey()
 
@@ -464,10 +473,10 @@ class VocabularyRepository(context: Context) {
                 put("word_id", word.id)
                 put("word", word.word)
                 put("ease_factor", previous?.easeFactor ?: 2.5)
-                put("interval", update.intervalSeconds)
-                put("repetitions", update.repetitions)
+                put("interval", finalInterval)
+                put("repetitions", finalRepetitions)
                 put("memory_strength", finalStrength)
-                put("next_review_time", update.nextReviewTime)
+                put("next_review_time", finalNextReviewTime)
                 put("last_review_time", now)
                 put("total_reviews", update.totalReviews)
                 put("correct_reviews", update.correctReviews)

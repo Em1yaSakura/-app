@@ -156,7 +156,7 @@ fun LearnScreen(
 
         val current = item!!
         val record = current.record
-        val stage = SpacedRepetition.stageLabel(record?.repetitions ?: 0)
+        val stage = SpacedRepetition.stageLabel(record?.repetitions ?: 0, record?.memoryStrength ?: 0)
         val strength = (record?.memoryStrength ?: 0).coerceIn(0, 100)
 
         // ── 上方可滚动区域 ──

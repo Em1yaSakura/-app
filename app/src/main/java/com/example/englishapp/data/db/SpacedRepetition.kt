@@ -9,7 +9,7 @@ import kotlin.math.min
  * - 忘记/模糊：5秒后重新出现
  */
 object SpacedRepetition {
-    private val intervalsSeconds = longArrayOf(
+    val intervalsSeconds = longArrayOf(
         5 * 60L,            // 5分钟
         20 * 60L,           // 20分钟
         40 * 60L,           // 40分钟
@@ -20,6 +20,13 @@ object SpacedRepetition {
         16 * 24 * 60 * 60L, // 16天
         30 * 24 * 60 * 60L, // 30天
     )
+
+    /**
+     * 将记忆强度映射到对应的间隔节点数（repetitions）。
+     * 强度每+10对应一次正确复习，如强度40=4次正确复习。
+     */
+    fun strengthToRepetitions(strength: Int): Int =
+        (strength / 10).coerceIn(0, intervalsSeconds.size)
 
     const val IMMEDIATE_RETRY_SECONDS = 5L
     const val PENALTY_RETRY_SECONDS = 4L  // 连续忘记3次后加速到4秒
@@ -104,10 +111,13 @@ object SpacedRepetition {
 
     /**
      * 用于UI展示 “第N次复习 - 40分钟” 之类的文本。
-     * 约定：repetitions=0 表示尚未进入曲线；repetitions=1 对应下一次为 5分钟。
+     * @param repetitions 实际复习次数
+     * @param memoryStrength 记忆强度（可选），若提供则取两者较大值作为展示阶段
      */
-    fun stageLabel(repetitions: Int): String {
-        val nextIndex = repetitions.coerceAtLeast(0).coerceAtMost(intervalsSeconds.size)
+    fun stageLabel(repetitions: Int, memoryStrength: Int = 0): String {
+        val strengthReps = strengthToRepetitions(memoryStrength)
+        val effectiveReps = maxOf(repetitions, strengthReps)
+        val nextIndex = effectiveReps.coerceAtLeast(0).coerceAtMost(intervalsSeconds.size)
         if (nextIndex == 0) return "学习中"
         if (nextIndex > intervalsSeconds.lastIndex) return "长期巩固"
         val sec = intervalsSeconds[(nextIndex - 1).coerceIn(0, intervalsSeconds.lastIndex)]
