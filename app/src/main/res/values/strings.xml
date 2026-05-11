@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">EnglishAPP</string>
+    <string name="tab_home">首页</string>
+    <string name="tab_learn">学习</string>
+    <string name="tab_wordbooks">词库</string>
+    <string name="tab_statistics">统计</string>
+    <string name="tab_settings">设置</string>
+</resources>
